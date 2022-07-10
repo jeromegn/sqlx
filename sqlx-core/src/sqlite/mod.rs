@@ -20,7 +20,9 @@ pub use transaction::SqliteTransactionManager;
 pub use type_info::SqliteTypeInfo;
 pub use value::{SqliteValue, SqliteValueRef};
 
+use crate::describe::Describe;
 use crate::executor::Executor;
+use crate::sqlite::connection::establish::EstablishParams;
 
 mod arguments;
 mod column;
@@ -60,3 +62,13 @@ impl_into_maybe_pool!(Sqlite, SqliteConnection);
 
 // required because some databases have a different handling of NULL
 impl_encode_for_option!(Sqlite);
+
+/// For use by `sqlite_macros` only.
+#[doc(hidden)]
+pub fn describe_sync(opts: &SqliteConnectOptions, query: &str) -> Result<Describe<Sqlite>, crate::error::Error> {
+    let params = EstablishParams::from_options(opts)?;
+    let mut conn = params.establish()?;
+    connection::describe::describe(&mut conn, query)
+
+    // SQLite database is closed immediately when `conn` is dropped
+}

@@ -98,10 +98,15 @@ impl SqliteConnectOptions {
         // https://www.sqlite.org/wal.html#use_of_wal_without_shared_memory .
         pragmas.insert("locking_mode".into(), locking_mode.as_str().into());
 
-        pragmas.insert(
-            "journal_mode".into(),
-            SqliteJournalMode::Wal.as_str().into(),
-        );
+        // We shouldn't be setting `journal_mode` unless the user requested it.
+        // WAL mode is a permanent setting for created databases and changing into or out of it
+        // requires an exclusive lock that can't be waited on with `sqlite3_busy_timeout()`.
+        // https://github.com/launchbadge/sqlx/pull/1930#issuecomment-1168165414
+        //
+        // pragmas.insert(
+        //     "journal_mode".into(),
+        //     SqliteJournalMode::Wal.as_str().into(),
+        // );
 
         pragmas.insert("foreign_keys".into(), "ON".into());
 
